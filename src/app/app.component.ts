@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { UsersService } from './users.service';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { distinctUntilChanged, debounceTime } from 'rxjs';
+import { distinctUntilChanged, debounceTime, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-root',
@@ -42,7 +42,15 @@ export class AppComponent {
 
   searchConfig$ = this.searchConfigForm.valueChanges.pipe(
     debounceTime(300),
-    distinctUntilChanged()
+    distinctUntilChanged(),
+    map((config) => {
+      const trimmedConfig = {
+        ...config,
+        userName: config.userName?.trim() || '',
+      };
+      localStorage.setItem('searchConfig', JSON.stringify(trimmedConfig));
+      return trimmedConfig;
+    })
   );
 
   users: any[] = [];
@@ -52,7 +60,6 @@ export class AppComponent {
     this.searchConfig$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((searchConfig) => {
-        localStorage.setItem('searchConfig', JSON.stringify(searchConfig));
         this.#usersService.findUsers(searchConfig).subscribe((users) => {
           this.users = users;
         });
