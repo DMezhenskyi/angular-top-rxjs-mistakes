@@ -1,13 +1,61 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-
+import { Component, DestroyRef, inject } from '@angular/core';
+import { UsersService } from './users.service';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { distinctUntilChanged, debounceTime } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  imports: [ReactiveFormsModule],
+  template: `
+    <form [formGroup]="searchConfigForm">
+      <h1>Users Search</h1>
+      <label for="user-name">User Name</label>
+      <input
+        formControlName="userName"
+        id="user-name"
+        type="text"
+        placeholder="User Name"
+      />
+
+      <label for="search-limit">Results Per Page</label>
+      <select formControlName="searchLimit" id="search-limit">
+        <option [value]="1">1</option>
+        <option [value]="3">3</option>
+        <option [value]="5">5</option>
+      </select>
+    </form>
+    <p>Found {{ users.length }} Users</p>
+    <ul>
+      @for (user of users; track user.id) {
+      <li>{{ user.name }}</li>
+      }
+    </ul>
+  `,
 })
 export class AppComponent {
-  title = 'angular-top-rxjs-mistakes';
+  #usersService = inject(UsersService);
+  searchConfigForm = new FormGroup({
+    userName: new FormControl('', { nonNullable: true }),
+    searchLimit: new FormControl(1, { nonNullable: true }),
+  });
+
+  searchConfig$ = this.searchConfigForm.valueChanges.pipe(
+    debounceTime(300),
+    distinctUntilChanged()
+  );
+
+  users: any[] = [];
+  destroyRef = inject(DestroyRef);
+
+  ngOnInit() {
+    this.searchConfig$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((searchConfig) => {
+        localStorage.setItem('searchConfig', JSON.stringify(searchConfig));
+        this.#usersService.findUsers(searchConfig).subscribe((users) => {
+          this.users = users;
+        });
+      });
+  }
 }
