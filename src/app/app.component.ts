@@ -1,5 +1,5 @@
 import { Component, DestroyRef, inject } from '@angular/core';
-import { UsersService } from './users.service';
+import { User, UsersService } from './users.service';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { distinctUntilChanged, debounceTime, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,36 +8,39 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   standalone: true,
   imports: [ReactiveFormsModule],
   template: `
+    <h1>Users Search</h1>
     <form [formGroup]="searchConfigForm">
-      <h1>Users Search</h1>
-      <label for="user-name">User Name</label>
-      <input
-        formControlName="userName"
-        id="user-name"
-        type="text"
-        placeholder="User Name"
-      />
-
-      <label for="search-limit">Results Per Page</label>
-      <select formControlName="searchLimit" id="search-limit">
-        <option [value]="1">1</option>
-        <option [value]="3">3</option>
-        <option [value]="5">5</option>
-      </select>
+      <label
+        >User Name
+        <input
+          formControlName="userName"
+          type="text"
+          placeholder="Type User Name"
+        />
+      </label>
+      <label
+        >Results Limit
+        <select formControlName="resultLimit">
+          <option [value]="1">1</option>
+          <option [value]="3">3</option>
+          <option [value]="5">5</option>
+        </select>
+      </label>
     </form>
-    <p>Found {{ users.length }} Users</p>
+    <p>
+      Found <b>{{ users.length }}</b> Users
+    </p>
     <ul>
       @for (user of users; track user.id) {
-      <li>{{ user.name }}</li>
+      <li class="card">{{ user.name }}</li>
       }
     </ul>
   `,
 })
 export class AppComponent {
-  #usersService = inject(UsersService);
   searchConfigForm = new FormGroup({
     userName: new FormControl('', { nonNullable: true }),
-    searchLimit: new FormControl(1, { nonNullable: true }),
+    resultLimit: new FormControl(3, { nonNullable: true }),
   });
 
   searchConfig$ = this.searchConfigForm.valueChanges.pipe(
@@ -53,8 +56,9 @@ export class AppComponent {
     })
   );
 
-  users: any[] = [];
+  users: User[] = [];
   destroyRef = inject(DestroyRef);
+  #usersService = inject(UsersService);
 
   ngOnInit() {
     this.searchConfig$
