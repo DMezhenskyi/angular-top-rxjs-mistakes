@@ -21,6 +21,9 @@ select {
   width: auto;
   min-width: 130px;
 }
+input {
+  width: 330px;
+}
 form {
   display: flex;
   justify-content: space-between;

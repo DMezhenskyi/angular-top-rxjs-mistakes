@@ -32,7 +32,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     </p>
     <ul>
       @for (user of users; track user.id) {
-      <li class="card">{{ user.name }}</li>
+        <li class="card">{{ user.name }}</li>
       }
     </ul>
   `,
