@@ -3,6 +3,7 @@ import { User, UsersService } from './users.service';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { distinctUntilChanged, debounceTime, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -56,15 +57,15 @@ export class AppComponent {
     })
   );
 
-  users: User[] = [];
   destroyRef = inject(DestroyRef);
-  #usersService = inject(UsersService);
-
+  usersService = inject(UsersService);
+  users: User[] = [];
+  
   ngOnInit() {
     this.searchConfig$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((searchConfig) => {
-        this.#usersService.findUsers(searchConfig).subscribe((users) => {
+        this.usersService.findUsers(searchConfig).subscribe((users) => {
           this.users = users;
         });
       });
