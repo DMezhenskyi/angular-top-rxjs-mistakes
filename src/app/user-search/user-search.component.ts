@@ -1,13 +1,14 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs';
+import { debounceTime, distinctUntilChanged, distinctUntilKeyChanged, map, shareReplay, switchMap, tap } from 'rxjs';
 import { UsersService, User } from '../users.service';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-user-search',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AsyncPipe],
   template: `
   <h1>Users Search</h1>
   <form [formGroup]="searchConfigForm">
@@ -23,10 +24,10 @@ import { UsersService, User } from '../users.service';
     </label>
   </form>
   <p>
-    Found <b>{{ users.length }}</b> Users
+    Found <b>{{ (users$ | async)?.length }}</b> Users
   </p>
   <ul>
-    @for (user of users; track user.id) {
+    @for (user of (users$ | async); track user.id) {
       <li class="card">{{ user.name }}</li>
     }
   </ul>
@@ -40,28 +41,21 @@ export class UserSearchComponent {
 
   searchConfig$ = this.searchConfigForm.valueChanges.pipe(
     debounceTime(300),
-    distinctUntilChanged(),
+    distinctUntilKeyChanged('userName'),
     map((config) => {
       const trimmedConfig = {
         ...config,
         userName: config.userName?.trim() || '',
       };
-      localStorage.setItem('searchConfig', JSON.stringify(trimmedConfig));
       return trimmedConfig;
-    })
+    }),
+    tap((trimmedConfig) => localStorage.setItem('searchConfig', JSON.stringify(trimmedConfig)))
   );
 
-  destroyRef = inject(DestroyRef);
   usersService = inject(UsersService);
-  users: User[] = [];
+  users$ = this.searchConfig$.pipe(
+    switchMap((searchConfig) => this.usersService.findUsers(searchConfig)),
+    shareReplay(1)
+  )
   
-  ngOnInit() {
-    this.searchConfig$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((searchConfig) => {
-        this.usersService.findUsers(searchConfig).subscribe((users) => {
-          this.users = users;
-        });
-      });
-  }
 }
