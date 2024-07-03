@@ -1,8 +1,7 @@
-import { Component, DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, distinctUntilKeyChanged, map, shareReplay, switchMap, tap } from 'rxjs';
-import { UsersService, User } from '../users.service';
+import { debounceTime, distinctUntilKeyChanged, map, shareReplay, switchMap, tap } from 'rxjs';
+import { UsersService } from '../users.service';
 import { AsyncPipe } from '@angular/common';
 
 @Component({
@@ -57,5 +56,5 @@ export class UserSearchComponent {
     switchMap((searchConfig) => this.usersService.findUsers(searchConfig)),
     shareReplay(1)
   )
-  
+
 }
