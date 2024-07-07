@@ -14,5 +14,5 @@ import { UserSearchComponent } from './user-search/user-search.component';
 })
 export class AppComponent {
   show = signal(true);
-  buttonText = computed(() => (this.show() ? 'Hide Search' : 'Show Search'));
+  buttonText = computed(() => (this.show() ? 'Destroy Search' : 'Show Search'));
 }

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilKeyChanged, map, shareReplay, switchMap, tap } from 'rxjs';
+import { debounceTime, distinctUntilKeyChanged, map, shareReplay, startWith, switchMap, tap } from 'rxjs';
 import { UsersService } from '../users.service';
 import { AsyncPipe } from '@angular/common';
 
@@ -50,11 +50,12 @@ export class UserSearchComponent {
     }),
     tap((trimmedConfig) => localStorage.setItem('searchConfig', JSON.stringify(trimmedConfig)))
   );
-
   usersService = inject(UsersService);
-  users$ = this.searchConfig$.pipe(
-    switchMap((searchConfig) => this.usersService.findUsers(searchConfig)),
-    shareReplay(1)
-  )
 
+  users$ = this.searchConfig$.pipe(
+    startWith(this.searchConfigForm.value),
+    switchMap(
+      (searchConfig) => this.usersService.findUsers(searchConfig)
+    ),
+  )
 }
