@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilKeyChanged, map, shareReplay, startWith, switchMap, tap } from 'rxjs';
+import { debounceTime, distinctUntilKeyChanged, map, MonoTypeOperatorFunction, Observable, ReplaySubject, shareReplay, startWith, switchMap, tap, timer } from 'rxjs';
 import { UsersService } from '../users.service';
 import { AsyncPipe } from '@angular/common';
 
@@ -55,7 +55,29 @@ export class UserSearchComponent {
   users$ = this.searchConfig$.pipe(
     startWith(this.searchConfigForm.value),
     switchMap(
-      (searchConfig) => this.usersService.findUsers(searchConfig)
+      (searchConfig) => timer(0, 3000).pipe(
+        switchMap(() => this.usersService.findUsers(searchConfig))
+      )
     ),
+    myShareReplay(1)
   )
+}
+// simplified, custom version of the shareReplay() operator in rxjs
+function myShareReplay<T>(bufferSize: number): MonoTypeOperatorFunction<T> {
+  return (source) => {
+    const connector = new ReplaySubject<T>(bufferSize);
+    const sourceSub = source.subscribe(value => connector.next(value));
+    let refCount = 0;
+
+    return new Observable(subscriber => {
+      refCount++;
+      subscriber.add(() => {
+        refCount--;
+        if (refCount === 0) {
+          sourceSub.unsubscribe()
+        }
+      })
+      return connector.subscribe(value => subscriber.next(value))
+    })
+  }
 }
